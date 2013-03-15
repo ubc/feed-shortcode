@@ -79,6 +79,68 @@ class CTLT_Feed_Shortcode {
 		
 	}
 	
+	function update_ubc_events_feed( $url, $events_url ) {
+		// $url_parse = parse_url( ); 
+		
+		$rest = substr( $url,  strlen($events_url ) );
+		$url_parse = explode( "&", $rest );
+		$path = array();
+		foreach( $url_parse as $value ):
+			
+			
+			if( self::starts_with($value,'#038;calPath') )
+				$path[] = $value;
+					
+		endforeach;
+		
+		$new_url = $events_url. "&".implode("&",$path)."";
+		if( !isset( $_GET['current'] ) ):
+			$new_url .= '&month=current';
+		else:	
+			$current = (int)$_GET['current'];
+			if( $current > 0 )
+				
+				// get year, eg 2006
+				$year = (int)date('Y');
+				// get month, eg 04
+				$month = (int)date('n')+$current;
+				
+				if($month > 12):
+					$year  = (int)($month/12)+$year;
+					$month = ($month%12);	
+				elseif($month < 0 ):
+					$str_date = strtotime( absint($current).' months ago' );
+					$year  = date('Y', ($str_date) );
+					$month = date('n', ($str_date) );
+						
+				endif;
+			// date('');
+			
+			
+			$month_name = date('F', mktime(0,0,0,$month,1,$year));
+			$new_url .= '&month='.$month_name.'&year='.$year;
+		endif;
+		
+		
+		/*
+		http://services.calendar.events.ubc.ca/cgi-bin/rssCache.pl?mode=rss&calPath=%2Fpublic%2FEvents+Calendar%2FA%2FC+691%2C+Provincial+Liberals+of+BC+of+the+AMS&calPath=%2Fpublic%2FEvents+Calendar%2FAIESEC&month=January&year=2009
+		*/
+		
+		return esc_url($new_url); //$url;
+	}
+	
+	/**
+	 * starts_with function.
+	 * 
+	 * @access public
+	 * @param mixed $string
+	 * @param mixed $test_string
+	 * @return void
+	 */
+	function starts_with($string, $test_string){
+	
+		return ( !strncmp( $string,  $test_string, strlen(  $test_string ) ) ? true: false );
+	}
 	
 	/**
 	 * feed_shortcode function.
@@ -115,6 +177,12 @@ class CTLT_Feed_Shortcode {
 		
 		if( empty($url) && !empty($twitter_user) )
 			$url = 'https://api.twitter.com/1/statuses/user_timeline.rss?screen_name='.$twitter_user;
+		
+		$ubc_events_url = 'http://services.calendar.events.ubc.ca/cgi-bin/rssCache.pl?mode=rss';
+		// make ubc events and calendar work well together
+		if( in_array($view, array('cal','calendar') ) && self::starts_with($url, $ubc_events_url ) ):
+			$url = self::update_ubc_events_feed( $url, $ubc_events_url );
+		endif;
 		
 		if(empty($url) && is_singular())
 			$url =	get_post_meta($post->ID, 'feed-url', true);
@@ -466,7 +534,12 @@ class CTLT_Feed_Shortcode {
 				
 				if($month > 12):
 					$year  = (int)($month/12)+$year;
-					$month = ($month%12);			
+					$month = ($month%12);	
+				elseif($month < 0 ):
+					$str_date = strtotime( absint($current).' months ago' );
+					$year  = date('Y', ($str_date) );
+					$month = date('n', ($str_date) );
+						
 				endif;
 				
 				// get day, eg 3
@@ -493,9 +566,10 @@ class CTLT_Feed_Shortcode {
 				}
 							
 				?>
+				
 				<div class="feed-shortcode feed-view-calendar">
-				<h3><?php echo date('F', mktime(0,0,0,$month,1,$year)).' '.$year; ?></h3>
-				<table>	
+				<h3><?php echo date('F', mktime(0,0,0,$month,1,$year)).' '.$year; ?> </h3>
+				<table class="table table-bordered">	
 				<tr>
 					<th>Sun</th>
 					<th>Mon</th>
@@ -520,7 +594,7 @@ class CTLT_Feed_Shortcode {
 					$content .="<div class='feed-links'>";
 					foreach( (array) $data[$year][$month][$current_day] as $feed_item):
 					
-					$content .= "<a href='".$feed_item->get_permalink()."' $target >".$feed_item->get_title()."</a>";
+					$content .= "<a href='".$feed_item->get_permalink()."' $target >".$feed_item->get_title()."</a><br />";
 					
 					endforeach;
 					$content .="</div>";
@@ -531,7 +605,7 @@ class CTLT_Feed_Shortcode {
 						if($content != ''):
 							echo "<td align='center' class='feed-day-shell'><div class='feed-day-inner'><span class='feed-date has-events'>".$current_day."</span>$content</div></td>";
 						else:
-							echo "<td align='center'><span class='feed-date'>".$current_day."</span></td>";
+							echo "<td align='center' ><span class='feed-date' >".$current_day."</span></td>";
 						endif;
 						
 					else:
@@ -542,9 +616,10 @@ class CTLT_Feed_Shortcode {
 				endforeach;
 				?>
 				</table> 
+				
 				<p>
-				<a href="?current=<?php echo $previous_month; ?>" class="button">Previous Month</a>
-				<a href="?current=<?php echo $next_month; ?>" class="button">Next Month</a>
+				<a href="?current=<?php echo $previous_month; ?>" class="button btn"><i class="icon-chevron-left"></i> Previous Month</a>
+				<a href="?current=<?php echo $next_month; ?>" class="button btn">Next Month <i class="icon-chevron-right"></i></a>
 				</p>
 				</div>
 				<?php
