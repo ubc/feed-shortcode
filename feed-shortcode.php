@@ -98,33 +98,11 @@ class CTLT_Feed_Shortcode {
 			$new_url .= '&month=current';
 		else:	
 			$current = (int)$_GET['current'];
-			if( $current > 0 )
-				
-				// get year, eg 2006
-				$year = (int)date('Y');
-				// get month, eg 04
-				$month = (int)date('n')+$current;
-				
-				if($month > 12):
-					$year  = (int)($month/12)+$year;
-					$month = ($month%12);	
-				elseif($month < 0 ):
-					$str_date = strtotime( absint($current).' months ago' );
-					$year  = date('Y', ($str_date) );
-					$month = date('n', ($str_date) );
-						
-				endif;
-			// date('');
-			
-			
-			$month_name = date('F', mktime(0,0,0,$month,1,$year));
-			$new_url .= '&month='.$month_name.'&year='.$year;
+
+			$new_url .= '&month=current'.$current;
 		endif;
 		
 		
-		/*
-		http://services.calendar.events.ubc.ca/cgi-bin/rssCache.pl?mode=rss&calPath=%2Fpublic%2FEvents+Calendar%2FA%2FC+691%2C+Provincial+Liberals+of+BC+of+the+AMS&calPath=%2Fpublic%2FEvents+Calendar%2FAIESEC&month=January&year=2009
-		*/
 		
 		return esc_url($new_url); //$url;
 	}
