@@ -22,7 +22,8 @@
 */
 
 class CTLT_Feed_Shortcode {
-
+	static public $counter  = 0;
+	static public $slider_ids = null;
 	/**
 	 * init function.
 	 *
@@ -30,7 +31,9 @@ class CTLT_Feed_Shortcode {
 	 * @return void
 	 */
 	public function init() {
-		add_action('init', array(__CLASS__, 'register_shortcode'));
+		add_action( 'init', array(__CLASS__, 'register_shortcode') );
+		add_action( 'init', array(__CLASS__, 'register_scripts') );
+		add_action( 'wp_footer', array(__CLASS__, 'print_script') );
 		
 	}
 	/**
@@ -41,6 +44,11 @@ class CTLT_Feed_Shortcode {
 	 */
 	function register_shortcode(){
 		self::add_shortcode( 'feed',  'feed_shortcode' );
+	}
+	
+	function register_scripts(){
+		wp_register_script( 'feed-shortcode-slider', plugins_url( 'js/feed-slider.js', __FILE__), array('jquery'), '1.0', true );
+
 	}
 	/**
 	 * has_shortcode function.
@@ -71,6 +79,46 @@ class CTLT_Feed_Shortcode {
 		
 	}
 	
+	function update_ubc_events_feed( $url, $events_url ) {
+		// $url_parse = parse_url( ); 
+		
+		$rest = substr( $url,  strlen($events_url ) );
+		$url_parse = explode( "&", $rest );
+		$path = array();
+		foreach( $url_parse as $value ):
+			
+			
+			if( self::starts_with($value,'#038;calPath') )
+				$path[] = $value;
+					
+		endforeach;
+		
+		$new_url = $events_url. "&".implode("&",$path)."";
+		if( !isset( $_GET['current'] ) ):
+			$new_url .= '&month=current';
+		else:	
+			$current = (int)$_GET['current'];
+
+			$new_url .= '&month=current'.$current;
+		endif;
+		
+		
+		
+		return esc_url($new_url); //$url;
+	}
+	
+	/**
+	 * starts_with function.
+	 * 
+	 * @access public
+	 * @param mixed $string
+	 * @param mixed $test_string
+	 * @return void
+	 */
+	function starts_with($string, $test_string){
+	
+		return ( !strncmp( $string,  $test_string, strlen(  $test_string ) ) ? true: false );
+	}
 	
 	/**
 	 * feed_shortcode function.
@@ -95,13 +143,28 @@ class CTLT_Feed_Shortcode {
 			'excerpt_length'=> 0,
 			'time_zone' 	=> null,
 			'show_author' 	=> '',  //YC, Oct 2012 - add parameter; value true/false
-			'show_date' 	=> '' // - add parameter; value updated/true/false
+			'show_date' 	=> '', // - add parameter; value updated/true/false
+			'twitter_user'  => '',
+			'twitter_search'=> ''
 		), $atts));
 		
 		$num = ( $num > 0 ? $num : 15 );
 		
+		if( empty($url) && !empty($twitter_search) )
+			$url = 'http://search.twitter.com/search.atom?q='.$twitter_search;
+		
+		if( empty($url) && !empty($twitter_user) )
+			$url = 'https://api.twitter.com/1/statuses/user_timeline.rss?screen_name='.$twitter_user;
+		
+		$ubc_events_url = 'http://services.calendar.events.ubc.ca/cgi-bin/rssCache.pl?mode=rss';
+		// make ubc events and calendar work well together
+		if( in_array($view, array('cal','calendar') ) && self::starts_with($url, $ubc_events_url ) ):
+			$url = self::update_ubc_events_feed( $url, $ubc_events_url );
+		endif;
+		
 		if(empty($url) && is_singular())
 			$url =	get_post_meta($post->ID, 'feed-url', true);
+		
 			
 		$url = html_entity_decode($url); 
 		
@@ -449,7 +512,12 @@ class CTLT_Feed_Shortcode {
 				
 				if($month > 12):
 					$year  = (int)($month/12)+$year;
-					$month = ($month%12);			
+					$month = ($month%12);	
+				elseif($month < 0 ):
+					$str_date = strtotime( absint($current).' months ago' );
+					$year  = date('Y', ($str_date) );
+					$month = date('n', ($str_date) );
+						
 				endif;
 				
 				// get day, eg 3
@@ -476,9 +544,10 @@ class CTLT_Feed_Shortcode {
 				}
 							
 				?>
+				
 				<div class="feed-shortcode feed-view-calendar">
-				<h3><?php echo date('F', mktime(0,0,0,$month,1,$year)).' '.$year; ?></h3>
-				<table>	
+				<h3><?php echo date('F', mktime(0,0,0,$month,1,$year)).' '.$year; ?> </h3>
+				<table class="table table-bordered">	
 				<tr>
 					<th>Sun</th>
 					<th>Mon</th>
@@ -503,7 +572,7 @@ class CTLT_Feed_Shortcode {
 					$content .="<div class='feed-links'>";
 					foreach( (array) $data[$year][$month][$current_day] as $feed_item):
 					
-					$content .= "<a href='".$feed_item->get_permalink()."' $target >".$feed_item->get_title()."</a>";
+					$content .= "<a href='".$feed_item->get_permalink()."' $target >".$feed_item->get_title()."</a><br />";
 					
 					endforeach;
 					$content .="</div>";
@@ -514,7 +583,7 @@ class CTLT_Feed_Shortcode {
 						if($content != ''):
 							echo "<td align='center' class='feed-day-shell'><div class='feed-day-inner'><span class='feed-date has-events'>".$current_day."</span>$content</div></td>";
 						else:
-							echo "<td align='center'><span class='feed-date'>".$current_day."</span></td>";
+							echo "<td align='center' ><span class='feed-date' >".$current_day."</span></td>";
 						endif;
 						
 					else:
@@ -525,9 +594,10 @@ class CTLT_Feed_Shortcode {
 				endforeach;
 				?>
 				</table> 
+				
 				<p>
-				<a href="?current=<?php echo $previous_month; ?>" class="button">Previous Month</a>
-				<a href="?current=<?php echo $next_month; ?>" class="button">Next Month</a>
+				<a href="?current=<?php echo $previous_month; ?>" class="button btn"><i class="icon-chevron-left"></i> Previous Month</a>
+				<a href="?current=<?php echo $next_month; ?>" class="button btn">Next Month <i class="icon-chevron-right"></i></a>
 				</p>
 				</div>
 				<?php
@@ -575,6 +645,132 @@ class CTLT_Feed_Shortcode {
 				</div>
 			<?php 
 			break;
+			case "twitter":?>
+				<div class="feed-shortcode feed-view-twitter " >
+				<?php 
+				$rss_items = array_slice( $rss_items, 0, $num );
+				$count = 0;
+				foreach ( (array) $rss_items as $item ): 
+					$odd_or_even =	($count%2) ? "odd" : "even"; 
+					$count++;
+					?>
+					<div class="feed-tweet <?php echo $odd_or_even; ?>">
+						<?php if( ! empty( $twitter_user ) ): ?>
+						<div class="twitter-user">
+							<img src="https://api.twitter.com/1/users/profile_image/<?php echo $twitter_user; ?>" />
+						</div>
+						<?php endif; ?>
+						<div class="tweet-content">
+							<div class="tweet-summary">
+							<?php echo self::twitter_content( $item->get_content(), $twitter_user ); ?>
+							</div><!-- .tweet-summary -->
+							<em class="tweet-date"><?php echo self::nice_time( $item->get_date('U')); ?></em>
+						</div><!-- .tweet-content -->
+					</div><!-- .feed-tweet -->
+				<?php endforeach;  ?>
+				
+				</div>
+				<style type="text/css">
+				.feed-view-twitter  .feed-tweet{
+					margin-top: 10px;
+				}
+				.twitter-user{
+					float: left;
+					margin-right: 10px;
+				}
+				.feed-tweet-shell{
+					clear: both;
+					position: relative;
+					margin-top: 10px;
+				}
+				.feed-tweet{
+					float: left;
+				}
+			
+				.tweet-content{
+					margin-left: 60px;
+				}
+			</style>
+			<?php
+			break;
+			case "twitter-slider": 
+				$id = 'twitter-feed-id-'.self::get_counter();
+				self::$slider_ids[] = $id;		
+				$rss_items = array_slice( $rss_items, 0, $num );
+				?>
+				<div class="feed-shortcode feed-view-twitter-slider" id="<?php echo $id; ?>">
+					<div class="slider-action">
+						<a href="#next" class="next-slide"><i class="icon-chevron-right"></i> <span>next tweet</span></a>
+						<a href="#previous" class="previous-slide"><i class="icon-chevron-left"></i> <span>previous tweet</span></a>
+					</div>
+					<div class="feed-slider-shell feed-tweet-shell" >
+				<?php 
+				$count = 0;
+				foreach ( (array) $rss_items as $item ): 
+					$odd_or_even =	($count%2) ? "odd" : "even"; 
+					$count++;
+					?>
+					<div class="feed-tweet feed-slide <?php echo $odd_or_even; ?>">
+						<?php if( ! empty( $twitter_user ) ): ?>
+						<div class="twitter-user">
+							<img src="https://api.twitter.com/1/users/profile_image/<?php echo $twitter_user; ?>" />
+						</div>
+						<?php endif; ?>
+						<div class="tweet-content">
+							<div class="tweet-summary">
+							<?php echo self::twitter_content( $item->get_content(), $twitter_user ); ?>
+							</div><!-- .tweet-summary -->
+							<em class="tweet-date"><?php echo self::nice_time( $item->get_date('U')); ?></em>
+						</div><!-- .tweet-content -->
+					</div><!-- .feed-tweet -->
+			<?php endforeach;  ?>
+				</div><!-- end of feed-slider-shell -->
+			</div>
+			
+			<style type="text/css">
+				.feed-view-twitter-slider{
+					width: 100%;
+					overflow: hidden;
+				}
+				.slider-action{
+					position: relative;
+					overflow: hidden;
+				}
+				.slider-action a{
+					padding: 0 7px;
+					text-decoration: none;
+				}
+				.slider-action span{
+					visibility: hidden;
+				}
+				.next-slide,
+				.previous-slide{
+					float: right;
+					width: 6px;
+					height: 20px;
+					background: #EEE;
+					display: block;
+					margin-right: 2px;
+				}
+				.twitter-user{
+					float: left;
+					margin-right: 10px;
+				}
+				.feed-tweet-shell{
+					clear: both;
+					position: relative;
+					margin-top: 10px;
+				}
+				.feed-tweet{
+					float: left;
+				}
+			
+				.tweet-content{
+					margin-left: 60px;
+				}
+			</style>
+			<?php
+			break;
 
 		}// end of switch
 	 
@@ -615,6 +811,92 @@ class CTLT_Feed_Shortcode {
 	 
 	    // Send the new description back to the page.
 	    return $desc;
+	}
+	
+	/**
+	 * twitter_content function.
+	 * 
+	 * @access public
+	 * @param mixed $content
+	 * @param mixed $user
+	 * @return void
+	 */
+	function twitter_content( $content, $user ) {
+		if(!empty( $user ) ):
+			$length =  strlen ( $user );
+			$content = substr( $content , $length+1); // removed the username: infront of each tweet
+		 	
+		 	// I don't think we need to do anything special for 
+		 	
+			// convert link to link
+			$text = preg_replace(
+	    			'@(https?://([-\w\.]+)+(/([\w/_\.]*(\?\S+)?(#\S+)?)?)?)@',
+	     			'<a href="$1">$1</a>', $content );
+			// convert @username to links 
+			$text = preg_replace(
+	    			'/@(\w+)/',
+	    			'<a href="http://twitter.com/$1">@$1</a>', $text );
+			// convert #hash to links
+			$text = preg_replace(
+	    			'/\s+#(\w+)/',
+	    			' <a href="http://search.twitter.com/search?q=%23$1">#$1</a>', $text );
+		endif;
+		return $text;
+	}
+	
+	/**
+	 * get_counter function.
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	function get_counter(){
+		self::$counter++;
+		return self::$counter;
+	}
+	
+	/**
+	 * nice_time function.
+	 * 
+	 * @access public
+	 * @param mixed $time
+	 * @return void
+	 */
+	function nice_time( $time ) {
+		$delta = time() - $time;
+		if ($delta < 60) {
+			return 'less than a minute ago.';
+		} else if ($delta < 120) {
+			return 'about a minute ago.';
+		} else if ($delta < (45 * 60)) {
+			return floor($delta / 60) . ' min ago.';
+		} else if ($delta < (90 * 60)) {
+			return 'about an hour ago.';
+		} else if ($delta < (24 * 60 * 60)) {
+			return 'about ' . floor($delta / 3600) . ' hours ago.';
+		} else if ($delta < (48 * 60 * 60)) {
+			return '1 day ago.';
+		} else if( $delta < (48 * 60 * 60* 5) ) {
+			return floor($delta / 86400) . ' days ago.';
+		} else if( time('Y') == date('Y', $time) ) {
+			return date('j M', $time);
+		} else {
+			return date( 'j M, y', $time);
+		}
+	}
+	
+	/**
+	 * print_script function.
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	function print_script() {
+		if ( ! self::$slider_ids )
+			return;
+			
+		wp_localize_script( 'feed-shortcode-slider', 'feed_slider', self::$slider_ids);
+		wp_print_scripts( 'feed-shortcode-slider' );
 	}
 
 }
