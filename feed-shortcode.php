@@ -23,7 +23,7 @@
 
 class CTLT_Feed_Shortcode {
 	static public $counter  = 0;
-	static public $slider_ids = null;
+	
 	/**
 	 * init function.
 	 *
@@ -32,8 +32,6 @@ class CTLT_Feed_Shortcode {
 	 */
 	public function init() {
 		add_action( 'init', array(__CLASS__, 'register_shortcode') );
-		add_action( 'init', array(__CLASS__, 'register_scripts') );
-		add_action( 'wp_footer', array(__CLASS__, 'print_script') );
 		
 	}
 	/**
@@ -46,10 +44,6 @@ class CTLT_Feed_Shortcode {
 		self::add_shortcode( 'feed',  'feed_shortcode' );
 	}
 	
-	function register_scripts(){
-		wp_register_script( 'feed-shortcode-slider', plugins_url( 'js/feed-slider.js', __FILE__), array('jquery'), '1.0', true );
-
-	}
 	/**
 	 * has_shortcode function.
 	 * 
@@ -131,7 +125,7 @@ class CTLT_Feed_Shortcode {
 	 */
 	public static function feed_shortcode( $atts, $content ) {
 
-		global $clf_base_options,$post;
+		global $post;
 		extract(shortcode_atts(array(  
 		    "url" 			=> '',  
 			"num" 			=> '',
@@ -144,17 +138,9 @@ class CTLT_Feed_Shortcode {
 			'time_zone' 	=> null,
 			'show_author' 	=> '',  //YC, Oct 2012 - add parameter; value true/false
 			'show_date' 	=> '', // - add parameter; value updated/true/false
-			'twitter_user'  => '',
-			'twitter_search'=> ''
 		), $atts));
 		
 		$num = ( $num > 0 ? $num : 15 );
-		
-		if( empty($url) && !empty($twitter_search) )
-			$url = 'http://search.twitter.com/search.atom?q='.$twitter_search;
-		
-		if( empty($url) && !empty($twitter_user) )
-			$url = 'https://api.twitter.com/1/statuses/user_timeline.rss?screen_name='.$twitter_user;
 		
 		$ubc_events_url = 'http://services.calendar.events.ubc.ca/cgi-bin/rssCache.pl?mode=rss';
 		// make ubc events and calendar work well together
@@ -645,58 +631,264 @@ class CTLT_Feed_Shortcode {
 				</div>
 			<?php 
 			break;
-			case "twitter":?>
-				<div class="feed-shortcode feed-view-twitter " >
-				<?php 
-				$rss_items = array_slice( $rss_items, 0, $num );
-				$count = 0;
-				foreach ( (array) $rss_items as $item ): 
-					$odd_or_even =	($count%2) ? "odd" : "even"; 
-					$count++;
-					?>
-					<div class="feed-tweet <?php echo $odd_or_even; ?>">
-						<?php if( ! empty( $twitter_user ) ): ?>
-						<div class="twitter-user">
-							<img src="https://api.twitter.com/1/users/profile_image/<?php echo $twitter_user; ?>" />
-						</div>
-						<?php endif; ?>
-						<div class="tweet-content">
-							<div class="tweet-summary">
-							<?php echo self::twitter_content( $item->get_content(), $twitter_user ); ?>
-							</div><!-- .tweet-summary -->
-							<em class="tweet-date"><?php echo self::nice_time( $item->get_date('U')); ?></em>
-						</div><!-- .tweet-content -->
-					</div><!-- .feed-tweet -->
-				<?php endforeach;  ?>
-				
-				</div>
-				<style type="text/css">
-				.feed-view-twitter  .feed-tweet{
-					margin-top: 10px;
-				}
-				.twitter-user{
-					float: left;
-					margin-right: 10px;
-				}
-				.feed-tweet-shell{
-					clear: both;
-					position: relative;
-					margin-top: 10px;
-				}
-				.feed-tweet{
-					float: left;
-				}
+	
+		}
+	}
 			
-				.tweet-content{
-					margin-left: 60px;
-				}
-			</style>
-			<?php
-			break;
-			case "twitter-slider": 
+	
+	/**
+	 * strshorten function.
+	 * 
+	 * @access public
+	 * @param mixed $string
+	 * @param mixed $length
+	 * @return void
+	 */
+	function strshorten( $string, $length ) {
+	    // By default, an ellipsis will be appended to the end of the text.
+	    $suffix = '...';
+	 
+	    // Convert 'smart' punctuation to 'dumb' punctuation, strip the HTML tags,
+	    // and convert all tabs and line-break characters to single spaces.
+	    $short_desc = trim(str_replace(array("\r","\n", "\t"), ' ', strip_tags($string)));
+	 
+	    // Cut the string to the requested length, and strip any extraneous spaces 
+	    // from the beginning and end.
+	    $desc = trim(substr($short_desc, 0, $length));
+	 
+	    // Find out what the last displayed character is in the shortened string
+	    $lastchar = substr($desc, -1, 1);
+	 
+	    // If the last character is a period, an exclamation point, or a question 
+	    // mark, clear out the appended text.
+	    if ($lastchar == '.' || $lastchar == '!' || $lastchar == '?') $suffix='';
+	 
+	    // Append the text.
+	    $desc .= $suffix;
+	 
+	    // Send the new description back to the page.
+	    return $desc;
+	}
+	
+		
+	
+	
+	
+
+}
+
+CTLT_Feed_Shortcode::init();
+
+
+
+class CTLT_Twitter_Feed_Shortcode{
+	static public $counter  = 0;
+	static public $slider_ids = null;
+	static public $token = null;
+	static public $twitter_data;
+	
+	/**
+	 * init function.
+	 *
+	 * @access public 
+	 * @return void
+	 */
+	public function init() {
+		
+		add_action( 'init', array(__CLASS__, 'register_shortcode') );
+		add_action( 'init', array(__CLASS__, 'register_scripts') );
+		add_action( 'wp_footer', array(__CLASS__, 'print_script') );
+		
+	}
+	/**
+	 * register_shortcode function.
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	function register_shortcode(){
+		self::add_shortcode( 'twitter',  'twitter_shortcode' );
+	}
+	
+	/**
+	 * register_scripts function.
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	function register_scripts(){
+		wp_register_script( 'feed-shortcode-slider', plugins_url( 'js/feed-slider.js', __FILE__), array('jquery'), '1.0', true );
+	}
+	
+	/**
+	 * print_script function.
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	function print_script() {
+		if ( ! self::$slider_ids )
+			return;
+			
+		wp_localize_script( 'feed-shortcode-slider', 'feed_slider', self::$slider_ids);
+		wp_print_scripts( 'feed-shortcode-slider' );
+	}
+	
+	
+	/**
+	 * twitter_shortcode function.
+	 * 
+	 * @access public
+	 * @param mixed $attr
+	 * @return void
+	 */
+	function twitter_shortcode( $atts ) {	
+			global $post;
+			extract(shortcode_atts(array(  
+			    "user" 			=> '',  
+				"search" 		=> '',
+				"secret" 		=> true,
+				"key"			=> '',
+				"exclude_replies" => '',
+				"target"		=> '_self',
+				'date_format' 	=> 'M d, Y',
+				'view'			=> 'default',
+				'num'			=> 10,
+				'empty'			=> '',
+				'excerpt_length'=> 0,
+				'time_zone' 	=> null,
+				'show_author' 	=> '',  //YC, Oct 2012 - add parameter; value true/false
+				'show_date' 	=> '', // - add parameter; value updated/true/false
+			), $atts));
+			
+			// sets the $token variable
+			self::get_tweets_bearer_token( $key, $secret );
+			
+			// sets $twitter_data;
+			self::get_tweets($search, $user, $num, $exclude_replies );
+			
+			if( empty( self::$twitter_data ) )
+				return $empty;
+				
+			return self::view( $view );
+			
+	}
+	
+		/**
+	 * has_shortcode function.
+	 * 
+	 * @access public
+	 * @param mixed $shortcode
+	 * @return void
+	 */
+	function has_shortcode( $shortcode ){
+		global $shortcode_tags;
+		/* don't do anything if the shortcode exists already */
+		return ( in_array( $shortcode, array_keys( $shortcode_tags ) ) ? true : false );
+	}
+	
+	
+	/**
+	 * add_shortcode function.
+	 * 
+	 * @access public
+	 * @param mixed $shortcode
+	 * @param mixed $shortcode_function
+	 * @return void
+	 */
+	function add_shortcode( $shortcode, $shortcode_function ){
+	
+		if( !self::has_shortcode( $shortcode ) )
+			add_shortcode( $shortcode, array( __CLASS__, $shortcode_function ) );
+		
+	}
+	
+	
+	/**
+	 * get_tweets_bearer_token function.
+	 * 
+	 * @access public
+	 * @param mixed $consumer_key
+	 * @param mixed $consumer_secret
+	 * @return void
+	 */
+	function get_tweets_bearer_token( $consumer_key, $consumer_secret ){
+        $consumer_key = rawurlencode( $consumer_key );
+        $consumer_secret = rawurlencode( $consumer_secret );
+
+       self::$token = maybe_unserialize( get_option( 'feedshortcode_twitter_token' ) );
+
+        if( ! is_array(self::$token) || empty(self::$token) || self::$token['consumer_key'] != $consumer_key || empty(self::$token['access_token']) ) {
+            
+			$args = array(
+				'headers' => array(
+					'Authorization' => 'Basic ' . base64_encode( $consumer_key . ':' . $consumer_secret )
+				),
+				'body' => array(
+					'grant_type' => 'client_credentials'
+					)
+			);
+          	$twitter_result = wp_remote_post('https://api.twitter.com/oauth2/token', $args);
+            $result = json_decode( $twitter_result['body'] );
+           
+            self::$token = serialize( array(
+                'consumer_key'      => $consumer_key,
+                'access_token'      => $result->access_token
+            ) );
+            //
+            update_option( 'feedshortcode_twitter_token', self::$token );
+        }
+    }
+    
+    
+    function get_tweets( $search = null, $user = null, $number=10, $exclude_replies = true ){
+    
+    	if( $user ) {
+          
+            $url = 'https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name='.rawurlencode($user).'&count='.$number;
+            if( $exclude_replies ) {
+                $url .= '&exclude_replies=true';
+            }
+        } elseif($search ) {
+           
+            $url =  'https://api.twitter.com/1.1/search/tweets.json?q='.rawurlencode($search).'&count='.$number;
+        } else {
+        	return true;
+        }
+       
+       $args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . self::$token['access_token']
+				)
+			);
+		
+        $result = wp_remote_get( $url, $args);
+        self::$twitter_data = json_decode( $result['body'] );
+    
+    }
+    /**
+     * view function.
+     * 
+     * @access public
+     * @param mixed $type
+     * @return void
+     */
+    function view( $type ) {
+    	if( empty( self::$twitter_data ) )
+    		return '';
+    	
+    	if( is_array( self::$twitter_data->statuses ) ):
+    		self::$twitter_data = self::$twitter_data->statuses;
+    	endif;
+    	
+    	// return '';
+    	ob_start();
+    	
+    	switch( $type ) {
+    		case "slider": 
 				$id = 'twitter-feed-id-'.self::get_counter();
 				self::$slider_ids[] = $id;		
-				$rss_items = array_slice( $rss_items, 0, $num );
+				
 				?>
 				<div class="feed-shortcode feed-view-twitter-slider" id="<?php echo $id; ?>">
 					<div class="slider-action">
@@ -706,21 +898,21 @@ class CTLT_Feed_Shortcode {
 					<div class="feed-slider-shell feed-tweet-shell" >
 				<?php 
 				$count = 0;
-				foreach ( (array) $rss_items as $item ): 
+				foreach ( (array) self::$twitter_data as $item ): 
 					$odd_or_even =	($count%2) ? "odd" : "even"; 
 					$count++;
 					?>
 					<div class="feed-tweet feed-slide <?php echo $odd_or_even; ?>">
-						<?php if( ! empty( $twitter_user ) ): ?>
+						<?php if( ! empty( $item->user ) ): ?>
 						<div class="twitter-user">
-							<img src="https://api.twitter.com/1/users/profile_image/<?php echo $twitter_user; ?>" />
+							<img src="<?php echo esc_url( $item->user->profile_image_url ); ?>" />
 						</div>
 						<?php endif; ?>
 						<div class="tweet-content">
 							<div class="tweet-summary">
-							<?php echo self::twitter_content( $item->get_content(), $twitter_user ); ?>
+							<?php echo self::twitter_content( $item->text ); ?>
 							</div><!-- .tweet-summary -->
-							<em class="tweet-date"><?php echo self::nice_time( $item->get_date('U')); ?></em>
+							<em class="tweet-date"><?php echo self::nice_time( $item->created_at ); ?></em>
 						</div><!-- .tweet-content -->
 					</div><!-- .feed-tweet -->
 			<?php endforeach;  ?>
@@ -771,46 +963,58 @@ class CTLT_Feed_Shortcode {
 			</style>
 			<?php
 			break;
+    		default:
+    		case "default":
+    		case "list":?>
+				<div class="feed-shortcode feed-view-twitter " >
+				<?php 
+				
+				$count = 0;
+				foreach ( (array) self::$twitter_data as $item ): 
+					$odd_or_even =	($count%2) ? "odd" : "even"; 
+					$count++;
+					?>
+					<div class="feed-tweet <?php echo $odd_or_even; ?>">
+						<?php if( ! empty( $item->user ) ): ?>
+						<div class="twitter-user">
+							<img src="<?php echo esc_url( $item->user->profile_image_url ); ?>" />
+						</div>
+						<?php endif; ?>
+						<div class="tweet-content">
+							<div class="tweet-summary">
+							<?php echo self::twitter_content( $item->text ); ?>
+							</div><!-- .tweet-summary -->
+							<em class="tweet-date"><?php echo self::nice_time( $item->created_at); ?></em>
+						</div><!-- .tweet-content -->
+					</div><!-- .feed-tweet -->
+				<?php endforeach;  ?>
+				
+				</div>
+				<style type="text/css">
+				.feed-view-twitter  .feed-tweet{
+					margin-top: 10px;
+				}
+				.twitter-user{
+					float: left;
+					margin-right: 10px;
+				}
+				.feed-tweet-shell{
+					position: relative;
+					margin-top: 10px;
+				}
+				.tweet-content{
+					margin-left: 60px;
+				}
+			</style>
+			<?php
+			break;
+			
 
 		}// end of switch
-	 
-		date_default_timezone_set($tz);
+	 	
+		// date_default_timezone_set($tz);
 		return str_replace("\r\n", '', ob_get_clean() );
-	
-	}
-	
-	/**
-	 * strshorten function.
-	 * 
-	 * @access public
-	 * @param mixed $string
-	 * @param mixed $length
-	 * @return void
-	 */
-	function strshorten( $string, $length ) {
-	    // By default, an ellipsis will be appended to the end of the text.
-	    $suffix = '...';
-	 
-	    // Convert 'smart' punctuation to 'dumb' punctuation, strip the HTML tags,
-	    // and convert all tabs and line-break characters to single spaces.
-	    $short_desc = trim(str_replace(array("\r","\n", "\t"), ' ', strip_tags($string)));
-	 
-	    // Cut the string to the requested length, and strip any extraneous spaces 
-	    // from the beginning and end.
-	    $desc = trim(substr($short_desc, 0, $length));
-	 
-	    // Find out what the last displayed character is in the shortened string
-	    $lastchar = substr($desc, -1, 1);
-	 
-	    // If the last character is a period, an exclamation point, or a question 
-	    // mark, clear out the appended text.
-	    if ($lastchar == '.' || $lastchar == '!' || $lastchar == '?') $suffix='';
-	 
-	    // Append the text.
-	    $desc .= $suffix;
-	 
-	    // Send the new description back to the page.
-	    return $desc;
+		
 	}
 	
 	/**
@@ -821,28 +1025,26 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $user
 	 * @return void
 	 */
-	function twitter_content( $content, $user ) {
-		if(!empty( $user ) ):
-			$length =  strlen ( $user );
-			$content = substr( $content , $length+1); // removed the username: infront of each tweet
-		 	
-		 	// I don't think we need to do anything special for 
-		 	
-			// convert link to link
-			$text = preg_replace(
-	    			'@(https?://([-\w\.]+)+(/([\w/_\.]*(\?\S+)?(#\S+)?)?)?)@',
-	     			'<a href="$1">$1</a>', $content );
-			// convert @username to links 
-			$text = preg_replace(
-	    			'/@(\w+)/',
-	    			'<a href="http://twitter.com/$1">@$1</a>', $text );
-			// convert #hash to links
-			$text = preg_replace(
-	    			'/\s+#(\w+)/',
-	    			' <a href="http://search.twitter.com/search?q=%23$1">#$1</a>', $text );
-		endif;
-		return $text;
-	}
+	function twitter_content( $content ) {
+	
+        $maxLen = 16;
+        //split long words
+        $pattern = '/[^\s\t]{'.$maxLen.'}[^\s\.\,\+\-\_]+/';
+        $content = preg_replace($pattern, '$0 ', $content);
+
+        //
+        $pattern = '/\w{2,4}\:\/\/[^\s\"]+/';
+        $content = preg_replace($pattern, '<a href="$0" title="" target="_blank">$0</a>', $content);
+        
+        //search
+        $pattern = '/\#([a-zA-Z0-9_-]+)/';
+        $content = preg_replace($pattern, '<a href="https://twitter.com/search?q=%23$1&src=hash" title="" target="_blank">$0</a>', $content);
+        //user
+        $pattern = '/\@([a-zA-Z0-9_-]+)/';
+        $content = preg_replace($pattern, '<a href="https://twitter.com/#!/$1" title="" target="_blank">$0</a>', $content);
+
+        return $content;
+    }	 	
 	
 	/**
 	 * get_counter function.
@@ -854,7 +1056,6 @@ class CTLT_Feed_Shortcode {
 		self::$counter++;
 		return self::$counter;
 	}
-	
 	/**
 	 * nice_time function.
 	 * 
@@ -863,6 +1064,8 @@ class CTLT_Feed_Shortcode {
 	 * @return void
 	 */
 	function nice_time( $time ) {
+		$time = strtotime($time);
+		
 		$delta = time() - $time;
 		if ($delta < 60) {
 			return 'less than a minute ago.';
@@ -884,21 +1087,6 @@ class CTLT_Feed_Shortcode {
 			return date( 'j M, y', $time);
 		}
 	}
-	
-	/**
-	 * print_script function.
-	 * 
-	 * @access public
-	 * @return void
-	 */
-	function print_script() {
-		if ( ! self::$slider_ids )
-			return;
-			
-		wp_localize_script( 'feed-shortcode-slider', 'feed_slider', self::$slider_ids);
-		wp_print_scripts( 'feed-shortcode-slider' );
-	}
-
 }
 
-CTLT_Feed_Shortcode::init();
+CTLT_Twitter_Feed_Shortcode::init();
