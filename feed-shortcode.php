@@ -148,9 +148,9 @@ class CTLT_Feed_Shortcode {
 			$url = self::update_ubc_events_feed( $url, $ubc_events_url );
 		endif;
 		
-		if(empty($url) && is_singular())
+		if(empty($url) && is_singular()):
 			$url =	get_post_meta($post->ID, 'feed-url', true);
-		
+		endif;
 			
 		$url = html_entity_decode($url); 
 		
@@ -182,12 +182,16 @@ class CTLT_Feed_Shortcode {
 	
 		// Build an array of all the items, starting with element 0 (first element).
 		$rss_items = $feed->get_items( 0, $maxitems );
-		if(empty($rss_items) && $empty == '')
+		if(empty($rss_items) && $empty == ''):
 			return false;
-		elseif(empty($rss_items))	
+		elseif(empty($rss_items)):
 			return "<span class='feed-shorcode feed-empty'>".$empty."</span>";
+		endif;
+		
+		
 		
 		ob_start();
+		
 		switch($view) {
 			
 			case "default":
@@ -633,6 +637,14 @@ class CTLT_Feed_Shortcode {
 			break;
 	
 		}
+		
+		date_default_timezone_set($tz);
+		$output_string = ob_get_contents();
+		ob_end_clean();
+		// date_default_timezone_set($tz);
+		return str_replace("\r\n", '', $output_string );
+		
+		
 	}
 			
 	
@@ -1011,9 +1023,10 @@ class CTLT_Twitter_Feed_Shortcode{
 			
 
 		}// end of switch
-	 	
+	 	$output_string = ob_get_contents();
+		ob_end_clean();
 		// date_default_timezone_set($tz);
-		return str_replace("\r\n", '', ob_get_clean() );
+		return str_replace("\r\n", '', $output_string );
 		
 	}
 	
