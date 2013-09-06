@@ -92,8 +92,14 @@ class CTLT_Feed_Shortcode {
 			$new_url .= '&month=current';
 		else:	
 			$current = (int)$_GET['current'];
+			
+			if( $current > 0)
+				$new_url .= '&month=current+'.$current;
+			else if( 0 ==  $current )
+				$new_url .= '&month=current';
+			else
+				$new_url .= '&month=current'.$current;
 
-			$new_url .= '&month=current'.$current;
 		endif;
 		
 		
@@ -148,7 +154,7 @@ class CTLT_Feed_Shortcode {
 			$url = self::update_ubc_events_feed( $url, $ubc_events_url );
 		endif;
 		
-		if(empty($url) && is_singular()):
+		if( empty($url) && is_singular() ):
 			$url =	get_post_meta($post->ID, 'feed-url', true);
 		endif;
 			
@@ -182,13 +188,12 @@ class CTLT_Feed_Shortcode {
 	
 		// Build an array of all the items, starting with element 0 (first element).
 		$rss_items = $feed->get_items( 0, $maxitems );
-		if(empty($rss_items) && $empty == ''):
+		
+		if(empty($rss_items) && $empty == '' && !in_array( $view, array('cal', 'calendar') ) ):
 			return false;
-		elseif(empty($rss_items)):
+		elseif(empty($rss_items) && !in_array( $view, array('cal', 'calendar') ) ):
 			return "<span class='feed-shorcode feed-empty'>".$empty."</span>";
-		endif;
-		
-		
+		endif;		
 		
 		ob_start();
 		
