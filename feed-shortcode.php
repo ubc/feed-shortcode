@@ -78,16 +78,17 @@ class CTLT_Feed_Shortcode {
 		
 		$rest = substr( $url,  strlen($events_url ) );
 		$url_parse = explode( "&", $rest );
+		
 		$path = array();
 		foreach( $url_parse as $value ):
 			
 			
-			if( self::starts_with($value,'#038;calPath') )
+			if( self::starts_with($value,'#038;calPath') || self::starts_with( $value,'amp;calPath'))
 				$path[] = $value;
 					
 		endforeach;
 		
-		$new_url = $events_url. "&".implode("&",$path)."";
+		$new_url = $events_url. "?mode=rss&" . implode("&",$path) ."";
 		if( !isset( $_GET['current'] ) ):
 			$new_url .= '&month=current';
 		else:	
@@ -101,8 +102,6 @@ class CTLT_Feed_Shortcode {
 				$new_url .= '&month=current'.$current;
 
 		endif;
-		
-		
 		
 		return esc_url($new_url); //$url;
 	}
@@ -148,7 +147,7 @@ class CTLT_Feed_Shortcode {
 		
 		$num = ( $num > 0 ? $num : 15 );
 		
-		$ubc_events_url = 'http://services.calendar.events.ubc.ca/cgi-bin/rssCache.pl?mode=rss';
+		$ubc_events_url = 'http://services.calendar.events.ubc.ca/cgi-bin/rssCache.pl';
 		// make ubc events and calendar work well together
 		if( in_array($view, array('cal','calendar') ) && self::starts_with($url, $ubc_events_url ) ):
 			$url = self::update_ubc_events_feed( $url, $ubc_events_url );
