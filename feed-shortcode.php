@@ -30,7 +30,7 @@ class CTLT_Feed_Shortcode {
 	 * @access public 
 	 * @return void
 	 */
-	public function init() {
+	static public function init() {
 		add_action( 'init', array(__CLASS__, 'register_shortcode') );
 		
 	}
@@ -40,7 +40,7 @@ class CTLT_Feed_Shortcode {
 	 * @access public
 	 * @return void
 	 */
-	function register_shortcode(){
+	static function register_shortcode(){
 		self::add_shortcode( 'feed',  'feed_shortcode' );
 	}
 	
@@ -51,7 +51,7 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $shortcode
 	 * @return void
 	 */
-	function has_shortcode( $shortcode ){
+	static function has_shortcode( $shortcode ){
 		global $shortcode_tags;
 		/* don't do anything if the shortcode exists already */
 		return ( in_array( $shortcode, array_keys( $shortcode_tags ) ) ? true : false );
@@ -66,14 +66,23 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $shortcode_function
 	 * @return void
 	 */
-	function add_shortcode( $shortcode, $shortcode_function ){
+	static function add_shortcode( $shortcode, $shortcode_function ){
 	
 		if( !self::has_shortcode( $shortcode ) )
 			add_shortcode( $shortcode, array( __CLASS__, $shortcode_function ) );
 		
 	}
 	
-	function update_ubc_events_feed( $url, $events_url ) {
+	/**
+	 * update_ubc_events_feed function.
+	 * 
+	 * @access public
+	 * @static
+	 * @param mixed $url
+	 * @param mixed $events_url
+	 * @return void
+	 */
+	static function update_ubc_events_feed( $url, $events_url ) {
 		// $url_parse = parse_url( ); 
 		
 		$rest = substr( $url,  strlen($events_url ) );
@@ -114,7 +123,7 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $test_string
 	 * @return void
 	 */
-	function starts_with($string, $test_string){
+	static function starts_with($string, $test_string){
 	
 		return ( !strncmp( $string,  $test_string, strlen(  $test_string ) ) ? true: false );
 	}
@@ -660,7 +669,7 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $length
 	 * @return void
 	 */
-	function strshorten( $string, $length ) {
+	static function strshorten( $string, $length ) {
 	    // By default, an ellipsis will be appended to the end of the text.
 	    $suffix = '...';
 	 
@@ -697,7 +706,11 @@ CTLT_Feed_Shortcode::init();
 
 
 
+/**
+ * CTLT_Twitter_Feed_Shortcode class.
+ */
 class CTLT_Twitter_Feed_Shortcode{
+
 	static public $counter  = 0;
 	static public $slider_ids = null;
 	static public $token = null;
@@ -709,7 +722,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @access public 
 	 * @return void
 	 */
-	public function init() {
+	static public function init() {
 		
 		add_action( 'init', array(__CLASS__, 'register_shortcode') );
 		add_action( 'init', array(__CLASS__, 'register_scripts') );
@@ -722,7 +735,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @access public
 	 * @return void
 	 */
-	function register_shortcode(){
+	static function register_shortcode(){
 		self::add_shortcode( 'twitter',  'twitter_shortcode' );
 	}
 	
@@ -732,7 +745,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @access public
 	 * @return void
 	 */
-	function register_scripts(){
+	static function register_scripts(){
 		wp_register_script( 'feed-shortcode-slider', plugins_url( 'js/feed-slider.js', __FILE__), array('jquery'), '1.0', true );
 	}
 	
@@ -742,7 +755,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @access public
 	 * @return void
 	 */
-	function print_script() {
+	static function print_script() {
 		if ( ! self::$slider_ids )
 			return;
 			
@@ -758,7 +771,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @param mixed $attr
 	 * @return void
 	 */
-	function twitter_shortcode( $atts ) {	
+	static function twitter_shortcode( $atts ) {	
 			global $post;
 			extract(shortcode_atts(array(  
 			    "user" 			=> '',  
@@ -790,14 +803,14 @@ class CTLT_Twitter_Feed_Shortcode{
 			
 	}
 	
-		/**
+	/**
 	 * has_shortcode function.
 	 * 
 	 * @access public
 	 * @param mixed $shortcode
 	 * @return void
 	 */
-	function has_shortcode( $shortcode ){
+	static function has_shortcode( $shortcode ){
 		global $shortcode_tags;
 		/* don't do anything if the shortcode exists already */
 		return ( in_array( $shortcode, array_keys( $shortcode_tags ) ) ? true : false );
@@ -812,7 +825,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @param mixed $shortcode_function
 	 * @return void
 	 */
-	function add_shortcode( $shortcode, $shortcode_function ){
+	static function add_shortcode( $shortcode, $shortcode_function ){
 	
 		if( !self::has_shortcode( $shortcode ) )
 			add_shortcode( $shortcode, array( __CLASS__, $shortcode_function ) );
@@ -828,7 +841,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @param mixed $consumer_secret
 	 * @return void
 	 */
-	function get_tweets_bearer_token( $consumer_key, $consumer_secret ){
+	static function get_tweets_bearer_token( $consumer_key, $consumer_secret ){
         $consumer_key = rawurlencode( $consumer_key );
         $consumer_secret = rawurlencode( $consumer_secret );
 
@@ -857,7 +870,18 @@ class CTLT_Twitter_Feed_Shortcode{
     }
     
     
-    function get_tweets( $search = null, $user = null, $number=10, $exclude_replies = true ){
+    /**
+     * get_tweets function.
+     * 
+     * @access public
+     * @static
+     * @param mixed $search (default: null)
+     * @param mixed $user (default: null)
+     * @param int $number (default: 10)
+     * @param bool $exclude_replies (default: true)
+     * @return void
+     */
+    static function get_tweets( $search = null, $user = null, $number=10, $exclude_replies = true ){
     
     	if( $user ) {
           
@@ -882,6 +906,7 @@ class CTLT_Twitter_Feed_Shortcode{
         self::$twitter_data = json_decode( $result['body'] );
     
     }
+    
     /**
      * view function.
      * 
@@ -889,7 +914,7 @@ class CTLT_Twitter_Feed_Shortcode{
      * @param mixed $type
      * @return void
      */
-    function view( $type ) {
+    static function view( $type ) {
     	if( empty( self::$twitter_data ) )
     		return '';
     	
@@ -1042,7 +1067,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @param mixed $user
 	 * @return void
 	 */
-	function twitter_content( $content ) {
+	static function twitter_content( $content ) {
 	
         $maxLen = 16;
         //split long words
@@ -1069,10 +1094,11 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @access public
 	 * @return void
 	 */
-	function get_counter(){
+	static function get_counter(){
 		self::$counter++;
 		return self::$counter;
 	}
+	
 	/**
 	 * nice_time function.
 	 * 
@@ -1080,7 +1106,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 * @param mixed $time
 	 * @return void
 	 */
-	function nice_time( $time ) {
+	static function nice_time( $time ) {
 		$time = strtotime($time);
 		
 		$delta = time() - $time;
