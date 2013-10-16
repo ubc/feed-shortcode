@@ -30,7 +30,7 @@ class CTLT_Feed_Shortcode {
 	 * @access public 
 	 * @return void
 	 */
-	public function init() {
+	public static function init() {
 		add_action( 'init', array(__CLASS__, 'register_shortcode') );
 		add_action( 'init', array(__CLASS__, 'register_scripts') );
 		add_action( 'wp_footer', array(__CLASS__, 'print_script') );
@@ -42,11 +42,11 @@ class CTLT_Feed_Shortcode {
 	 * @access public
 	 * @return void
 	 */
-	function register_shortcode(){
+	static  function register_shortcode(){
 		self::add_shortcode( 'feed',  'feed_shortcode' );
 	}
 	
-	function register_scripts(){
+	static function register_scripts(){
 		wp_register_script( 'feed-shortcode-slider', plugins_url( 'js/feed-slider.js', __FILE__), array('jquery'), '1.0', true );
 
 	}
@@ -57,7 +57,7 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $shortcode
 	 * @return void
 	 */
-	function has_shortcode( $shortcode ){
+	static function has_shortcode( $shortcode ){
 		global $shortcode_tags;
 		/* don't do anything if the shortcode exists already */
 		return ( in_array( $shortcode, array_keys( $shortcode_tags ) ) ? true : false );
@@ -72,14 +72,14 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $shortcode_function
 	 * @return void
 	 */
-	function add_shortcode( $shortcode, $shortcode_function ){
+	static function add_shortcode( $shortcode, $shortcode_function ){
 	
 		if( !self::has_shortcode( $shortcode ) )
 			add_shortcode( $shortcode, array( __CLASS__, $shortcode_function ) );
 		
 	}
 	
-	function update_ubc_events_feed( $url, $events_url ) {
+	static function update_ubc_events_feed( $url, $events_url ) {
 		// $url_parse = parse_url( ); 
 		
 		$rest = substr( $url,  strlen($events_url ) );
@@ -115,7 +115,7 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $test_string
 	 * @return void
 	 */
-	function starts_with($string, $test_string){
+	static function starts_with($string, $test_string){
 	
 		return ( !strncmp( $string,  $test_string, strlen(  $test_string ) ) ? true: false );
 	}
@@ -821,7 +821,7 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $user
 	 * @return void
 	 */
-	function twitter_content( $content, $user ) {
+	static function twitter_content( $content, $user ) {
 		if(!empty( $user ) ):
 			$length =  strlen ( $user );
 			$content = substr( $content , $length+1); // removed the username: infront of each tweet
@@ -850,7 +850,7 @@ class CTLT_Feed_Shortcode {
 	 * @access public
 	 * @return void
 	 */
-	function get_counter(){
+	static function get_counter(){
 		self::$counter++;
 		return self::$counter;
 	}
@@ -862,7 +862,7 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $time
 	 * @return void
 	 */
-	function nice_time( $time ) {
+	static function nice_time( $time ) {
 		$delta = time() - $time;
 		if ($delta < 60) {
 			return 'less than a minute ago.';
@@ -891,7 +891,7 @@ class CTLT_Feed_Shortcode {
 	 * @access public
 	 * @return void
 	 */
-	function print_script() {
+	static function print_script() {
 		if ( ! self::$slider_ids )
 			return;
 			
