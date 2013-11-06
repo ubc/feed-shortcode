@@ -28,9 +28,9 @@
 			fs.next     = fs.shell.find('.next-slide');
 			fs.feed_shell.width( fs.total_width );
 		
-			console.log(fs);
+			
 			fs.previous.click(function(){
-				console.log('works');
+				
 				fs.index = fs.index - 1;
 				if( fs.index < 0)
 					fs.index = 0;
@@ -40,7 +40,7 @@
 			})
 			
 			fs.next.click(function(){
-				console.log('works');
+				
 				fs.index = fs.index + 1;
 				
 				if( fs.index > fs.total_index )
