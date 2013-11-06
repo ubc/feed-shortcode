@@ -845,9 +845,9 @@ class CTLT_Twitter_Feed_Shortcode{
         $consumer_key = rawurlencode( $consumer_key );
         $consumer_secret = rawurlencode( $consumer_secret );
 
-       self::$token = maybe_unserialize( get_option( 'feedshortcode_twitter_token' ) );
-
-        if( ! is_array(self::$token) || empty(self::$token) || self::$token['consumer_key'] != $consumer_key || empty(self::$token['access_token']) ) {
+        self::$token = get_option( 'feedshortcode_twitter_token' );
+		
+		if( ! is_array(self::$token) || empty(self::$token) || self::$token['consumer_key'] != $consumer_key || empty(self::$token['access_token']) ) {
             
 			$args = array(
 				'headers' => array(
@@ -860,12 +860,13 @@ class CTLT_Twitter_Feed_Shortcode{
           	$twitter_result = wp_remote_post('https://api.twitter.com/oauth2/token', $args);
             $result = json_decode( $twitter_result['body'] );
            
-            self::$token = serialize( array(
+            self::$token = array(
                 'consumer_key'      => $consumer_key,
                 'access_token'      => $result->access_token
-            ) );
+            );
             //
             update_option( 'feedshortcode_twitter_token', self::$token );
+            
         }
     }
     
@@ -895,8 +896,8 @@ class CTLT_Twitter_Feed_Shortcode{
         } else {
         	return true;
         }
-       
-       $args = array(
+        
+      	$args = array(
 				'headers' => array(
 					'Authorization' => 'Bearer ' . self::$token['access_token']
 				)
@@ -904,7 +905,7 @@ class CTLT_Twitter_Feed_Shortcode{
 		
         $result = wp_remote_get( $url, $args);
         self::$twitter_data = json_decode( $result['body'] );
-    
+    	
     }
     
     /**
