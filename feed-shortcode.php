@@ -141,17 +141,18 @@ class CTLT_Feed_Shortcode {
 
 		global $post;
 		extract(shortcode_atts(array(  
-		    "url" 			=> '',  
-			"num" 			=> '',
-			"excerpt" 		=> true,
+		    "url"			=> '',  
+			"num"			=> '',
+			"excerpt"		=> true,
 			"target"		=> '_self',
 			'date_format' 	=> 'M d, Y',
 			'view'			=> 'default',
 			'empty'			=> '',
 			'excerpt_length'=> 0,
-			'time_zone' 	=> null,
-			'show_author' 	=> '',  //YC, Oct 2012 - add parameter; value true/false
-			'show_date' 	=> '', // - add parameter; value updated/true/false
+			'time_zone'		=> null,
+			'show_author'	=> '',	//YC, Oct 2012 - add parameter; value true/false
+			'show_date'		=> '',	// - add parameter; value updated/true/false
+			'order_by_date'	=> 1,	//LC - option to turn off order_by_date so that it uses feed's ordering
 		), $atts));
 		
 		$num = ( $num > 0 ? $num : 15 );
@@ -183,7 +184,6 @@ class CTLT_Feed_Shortcode {
 		$show_author = ($show_author != false && $show_author != "false" ? true: false );
 		$show_date = ( $show_date != false && $show_updated_date != "false" ? $show_date: false );
 		
-		
 		// Figure out how many total items there are
 		$maxitems = $feed->get_item_quantity(); 
 		
@@ -194,6 +194,10 @@ class CTLT_Feed_Shortcode {
 		$tz = date_default_timezone_get();
 		date_default_timezone_set($time_zone); // "America/Vancouver"
 	
+		if ($order_by_date < 1) {
+			$feed->order_by_date = false;	//I think this line makes it so that it DOESN't resort stuff.
+		}
+		
 		// Build an array of all the items, starting with element 0 (first element).
 		$rss_items = $feed->get_items( 0, $maxitems );
 		
