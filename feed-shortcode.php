@@ -349,7 +349,10 @@ class CTLT_Feed_Shortcode {
 	                    $entries[$item->get_date("U")][] = $item;
 	            endforeach;
 	             
-	            $entries = array_reverse($entries); ?>
+				if ($order_by_date != 0) {
+ 					$entries = array_reverse($entries);
+ 				}
+ 				?>
 	 
 	            <div class="feed-shortcode feed_widget feed-view-listevents">
 	            <?php
@@ -374,7 +377,9 @@ class CTLT_Feed_Shortcode {
 					$entries[$item->get_date($date_format)][] = $item; 
 				endforeach;
 				
-				$entries = array_reverse($entries);
+				if ($order_by_date != 0) {
+ 					$entries = array_reverse($entries);
+ 				}
 				
 				?>
 				<ul class="feed-shortcode feed_widget feed-view-upcoming">
@@ -469,7 +474,9 @@ class CTLT_Feed_Shortcode {
 					$entries[$item->get_date("F Y")][] = $item; 
 				endforeach;
 				
-				$entries = array_reverse($entries);
+				if ($order_by_date != 0) {
+ 					$entries = array_reverse($entries);
+ 				}
 				
 				?>
 				<ul class="feed-shortcode feed_widget feed-view-timeline">
