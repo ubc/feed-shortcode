@@ -92,7 +92,12 @@ class CTLT_Feed_Shortcode {
 		foreach( $url_parse as $value ):
 			
 			
-			if( self::starts_with($value,'#038;calPath') || self::starts_with( $value,'amp;calPath'))
+			if( self::starts_with($value,'#038;calPath') || 
+				self::starts_with($value,'amp;calPath') || 
+				self::starts_with($value, 'amp;catTag') ||
+				self::starts_with($value, '#038;catTag') ||
+				self::starts_with($value, '?amp;catTag') || 
+				self::starts_with($value, '?#038;catTag')) 
 				$path[] = $value;
 					
 		endforeach;
@@ -608,12 +613,11 @@ class CTLT_Feed_Shortcode {
 				endforeach;
 				?>
 				</table> 
-				<?php if( $current < 20 && $current > -20 ) { ?>
+				
 				<p>
-				<a href="?current=<?php echo $previous_month; ?>" rel="nofollow" class="button btn"><i class="icon-chevron-left"></i> Previous Month</a>
-				<a href="?current=<?php echo $next_month; ?>" rel="nofollow" class="button btn">Next Month <i class="icon-chevron-right"></i></a>
+				<a href="?current=<?php echo $previous_month; ?>" class="button btn"><i class="icon-chevron-left"></i> Previous Month</a>
+				<a href="?current=<?php echo $next_month; ?>" class="button btn">Next Month <i class="icon-chevron-right"></i></a>
 				</p>
-				<?php } ?>
 				</div>
 				<?php
 				
