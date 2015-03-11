@@ -82,9 +82,7 @@ class CTLT_Feed_Shortcode {
 	 * @param mixed $events_url
 	 * @return void
 	 */
-
 	static function update_ubc_events_feed( $url, $events_url ) {
-
 		// $url_parse = parse_url( ); 
 		
 		$rest = substr( $url,  strlen($events_url ) );
@@ -118,6 +116,7 @@ class CTLT_Feed_Shortcode {
 				$new_url .= '&month=current'.$current;
 
 		endif;
+
 		return esc_url($new_url); //$url;
 	}
 	
@@ -529,11 +528,9 @@ class CTLT_Feed_Shortcode {
 
 				
 				// get year, eg 2006
-				if(empty($year)){
-					$year = (int)date('Y');
-				}
+				$year = (int)date('Y');
 				// get month, eg 04
-
+				$month = (int)date('n')+$current;
 				/*add month here*/
 				if(empty($month)){
 					$month = (int)date('n')+$current;
