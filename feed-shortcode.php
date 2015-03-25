@@ -103,8 +103,8 @@ class CTLT_Feed_Shortcode {
 		endforeach;
 		
 		$new_url = $events_url. "?mode=rss&" . implode("&",$path) ."";
-		if( !isset( $_GET['current'] ) ):
-			$new_url .= '&month=current';
+		if( !isset( $_GET['current'] )):
+			$new_url .= '&month=current';		
 		else:	
 			$current = (int)$_GET['current'];
 			
@@ -116,7 +116,7 @@ class CTLT_Feed_Shortcode {
 				$new_url .= '&month=current'.$current;
 
 		endif;
-		
+
 		return esc_url($new_url); //$url;
 	}
 	
@@ -158,6 +158,8 @@ class CTLT_Feed_Shortcode {
 			'show_author'	=> '',	//YC, Oct 2012 - add parameter; value true/false
 			'show_date'		=> '',	// - add parameter; value updated/true/false
 			'order_by_date'	=> 1,	//LC - option to turn off order_by_date so that it uses feed's ordering
+			'month'         => null,
+			'year'          => null,
 		), $atts));
 		
 		$num = ( $num > 0 ? $num : 15 );
@@ -511,7 +513,7 @@ class CTLT_Feed_Shortcode {
 			case "calendar":
 			case "cal":
 				
-				// $current = ( empty( $_GET['current'] ) ? "" :  $_GET['current'] );
+				//$current = (empty( $_GET['current'] )? "": $_GET['current']);
 				$current = (empty( $_GET['current'] )? 0 : $_GET['current']);
 				$current_new = ( $current>0? "+". $current: $current );
 				$current_month = "current". (empty($current_new)? "" : $current_new);
@@ -523,12 +525,16 @@ class CTLT_Feed_Shortcode {
 				foreach((array) $rss_items as $item):				
 					$data[$item->get_date('Y')][$item->get_date('n')][$item->get_date('j')][] = $item;
 				endforeach;
+
 				
 				// get year, eg 2006
 				$year = (int)date('Y');
 				// get month, eg 04
 				$month = (int)date('n')+$current;
-				
+				/*add month here*/
+				if(empty($month)){
+					$month = (int)date('n')+$current;
+				}
 				if($month > 12):
 					$year  = (int)($month/12)+$year;
 					$month = ($month%12);	
@@ -566,8 +572,8 @@ class CTLT_Feed_Shortcode {
 				
 				<div class="feed-shortcode feed-view-calendar">
 				<h3><?php echo date('F', mktime(0,0,0,$month,1,$year)).' '.$year; ?> </h3>
-				<table class="table table-bordered">	
-				<tr>
+				<table class="table table-bordered">
+					<tr>
 					<th>Sun</th>
 					<th>Mon</th>
 					<th>Tue</th>
