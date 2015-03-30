@@ -528,12 +528,15 @@ class CTLT_Feed_Shortcode {
 
 				
 				// get year, eg 2006
-				$year = (int)date('Y');
+				if(empty($year)){
+					$year = (int)date('Y');
+				}
 				// get month, eg 04
-				$month = (int)date('n')+$current;
 				/*add month here*/
 				if(empty($month)){
 					$month = (int)date('n')+$current;
+				}else{
+					$month = date('m', strtotime($month))+$current;
 				}
 				if($month > 12):
 					$year  = (int)($month/12)+$year;
