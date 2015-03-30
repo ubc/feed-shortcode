@@ -531,12 +531,17 @@ class CTLT_Feed_Shortcode {
 				if(empty($year)){
 					$year = (int)date('Y');
 				}
+				
 				// get month, eg 04
 				/*add month here*/
+				
 				if(empty($month)){
 					$month = (int)date('n')+$current;
 				}else{
-					$month = date('m', strtotime($month))+$current;
+					if (!is_numeric($month)){
+						//add 1 do start month count on the 1st, works for feb
+						$month = (int)date('m', strtotime($month, 1));
+					}
 				}
 				if($month > 12):
 					$year  = (int)($month/12)+$year;
