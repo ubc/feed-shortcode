@@ -160,6 +160,7 @@ class CTLT_Feed_Shortcode {
 			'order_by_date'	=> 1,	//LC - option to turn off order_by_date so that it uses feed's ordering
 			'month'         => null,
 			'year'          => null,
+			'mednet'          => false,
 		), $atts));
 		
 		$num = ( $num > 0 ? $num : 15 );
@@ -472,8 +473,7 @@ class CTLT_Feed_Shortcode {
 			</div>
 			<?php
 	
-			break;	
-			
+			break;		
 			case "timeline":
 				$entries = array();
 				
@@ -512,7 +512,17 @@ class CTLT_Feed_Shortcode {
 			
 			case "calendar":
 			case "cal":
-				
+			if (!function_exists('get_string')){
+				function get_string($string, $start, $end){
+					$string = " ".$string;
+					$pos = strpos($string,$start);
+					if ($pos == 0) return "";
+					$pos += strlen($start);
+					$len = strpos($string,$end,$pos) - $pos;
+					return substr($string,$pos,$len);
+				}
+			}
+
 				//$current = (empty( $_GET['current'] )? "": $_GET['current']);
 				$current = (empty( $_GET['current'] )? 0 : $_GET['current']);
 				$current_new = ( $current>0? "+". $current: $current );
@@ -539,7 +549,7 @@ class CTLT_Feed_Shortcode {
 					$month = (int)date('n')+$current;
 				}else{
 					if (!is_numeric($month)){
-						//add 1 do start month count on the 1st, works for feb
+						//add 1 to start month count on the 1st, works for feb
 						$month = (int)date('m', strtotime($month, 1));
 					}
 				}
@@ -591,6 +601,8 @@ class CTLT_Feed_Shortcode {
 					<th>Sat</th>
 				</tr>
 				<?php
+
+
 				$date = 0;
 				foreach ($week as $key => $val) : 
 				echo "<tr>";
@@ -604,9 +616,15 @@ class CTLT_Feed_Shortcode {
 					if(is_array($data[$year][$month][$current_day])):
 					$content .="<div class='feed-links'>";
 					foreach( (array) $data[$year][$month][$current_day] as $feed_item):
-					
-					$content .= "<a href='".$feed_item->get_permalink()."' $target >".$feed_item->get_title()."</a><br />";
-					
+
+					if (!$mednet){
+						$content .= "<a href='".$feed_item->get_permalink()."' $target >".$feed_item->get_title()."</a><br />";
+					}else{
+						$title = $feed_item->get_title();
+						$item_content = $feed_item->get_description();
+						$item_link = get_string($item_content, '<b>Link:</b> <a href="', '">http');						
+						$content .= "<a href=\"".$item_link."\" target=\"_blank\">".$title."</a></br />";
+					}
 					endforeach;
 					$content .="</div>";
 					
