@@ -77,7 +77,7 @@ class CTLT_Feed_Shortcode
 		if ( ! self::has_shortcode( $shortcode ) ) {
 			add_shortcode( $shortcode, array( __CLASS__, $shortcode_function ) );
 		}
-	}
+	}	
 
 	/**
 	 * update_ubc_events_feed function.
@@ -135,6 +135,24 @@ class CTLT_Feed_Shortcode
 	}
 
 	/**
+	 * get_string function.
+	 *
+	 * @access public
+	 * @param string $string
+	 * @param string $start
+	 * @param string $end
+	 * @return string
+	 */
+	static function get_string( $string, $start, $end ) {
+		$string = ' '.$string;
+		$pos = strpos( $string,$start );
+		if ( $pos == 0 ) return '';
+		$pos += strlen( $start );
+		$len = strpos( $string,$end,$pos ) - $pos;
+		return substr( $string,$pos,$len );
+	}	
+
+	/**
 	 * feed_shortcode function.
 	 *
 	 * @access public
@@ -165,7 +183,6 @@ class CTLT_Feed_Shortcode
 			), $atts ) );
 
 		$num = ( $num > 0 ? $num : 15 );
-
 		$ubc_events_url = 'http://services.calendar.events.ubc.ca/cgi-bin/rssCache.pl';
 		// Make ubc events and calendar work well together.
 		if ( in_array( $view, array( 'cal', 'calendar' ) ) && self::starts_with( $url, $ubc_events_url ) ) :
@@ -611,7 +628,7 @@ class CTLT_Feed_Shortcode
 								} else {
 									$title = $feed_item->get_title( );
 									$item_content = $feed_item->get_description( );
-									$item_link = get_string( $item_content, '<b>Link:</b> <a href="', '">http' );
+									$item_link = self::get_string( $item_content, '<b>Link:</b> <a href="', '">http' );
 									$content .= '<a href="'.$item_link.'" target="$target">'.$title.'</a></br />';
 								}
 							endforeach;
@@ -726,23 +743,6 @@ class CTLT_Feed_Shortcode
 		return $desc;
 	}
 
-	/**
-	 * get_string function.
-	 *
-	 * @access public
-	 * @param string $string
-	 * @param string $start
-	 * @param string $end
-	 * @return string
-	 */
-	static function get_string( $string, $start, $end ) {
-		$string = ' '.$string;
-		$pos = strpos( $string,$start );
-		if ( $pos == 0 ) return '';
-		$pos += strlen( $start );
-		$len = strpos( $string,$end,$pos ) - $pos;
-		return substr( $string,$pos,$len );
-	}
 }
 
 CTLT_Feed_Shortcode::init( );
