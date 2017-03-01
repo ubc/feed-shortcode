@@ -624,12 +624,15 @@ class CTLT_Feed_Shortcode
 							$content .= "<div class='feed-links'>";
 							foreach ( ( array ) $data[ $year ][ $month ][ $current_day ] as $feed_item ) :
 								if ( ! $mednet ) {
-									$content .= '<a href="'.$feed_item->get_permalink( ).'" $target >'.$feed_item->get_title( ).'</a><br />';
+									$content .= "<a href='".$feed_item->get_permalink( )."' $target>".$feed_item->get_title( ).'</a><br />';
 								} else {
 									$title = $feed_item->get_title( );
 									$item_content = $feed_item->get_description( );
 									$item_link = self::get_string( $item_content, '<b>Link:</b> <a href="', '">http' );
-									$content .= '<a href="'.$item_link.'" target="$target">'.$title.'</a></br />';
+									if ( empty(trim($item_link)) ) {
+										$item_link = trim( self::get_string( $item_content, '<b>Link:</b> ', '</div>' ) );
+									}
+									$content .= "<a href='".$item_link."' $target>" . $title . '</a></br />';
 								}
 							endforeach;
 							$content .= '</div>';
