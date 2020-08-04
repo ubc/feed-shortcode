@@ -152,16 +152,6 @@ class CTLT_Feed_Shortcode
 		return substr( $string,$pos,$len );
 	}	
 
-	private static function get_feed_item_date( $feed_item, $feed_type ) {
-		if ( $feed_type === 'RSS' ) {
-			return $feed_item->get_item_tags( '', 'lastBuildDate' ) ? $feed_item->get_item_tags( '', 'lastBuildDate' ) : $feed_item->get_item_tags( '', 'pubDate' );
-		}
-
-		if ( $feed_type === 'Atom' ) {
-			return $feed_item->get_item_tags( 'http://www.w3.org/2005/Atom', 'updated' ) ? $feed_item->get_item_tags( 'http://www.w3.org/2005/Atom', 'updated' ) : $feed_item->get_item_tags( 'http://www.w3.org/2005/Atom', 'published' );
-		}
-	}
-
 	/**
 	 * feed_shortcode function.
 	 *
@@ -212,29 +202,20 @@ class CTLT_Feed_Shortcode
 
 		$feed = fetch_feed( $url ); // All the hard work is done here.
 
-		if ( $feed->get_type() & SIMPLEPIE_TYPE_RSS_ALL ) {
-			$feed_type = 'RSS';
-		} elseif ( $feed->get_type() & SIMPLEPIE_TYPE_ATOM_ALL ) {
-			$feed_type = 'Atom';
-		} else {
-			// If the feed is not either RSS or Atom feed, fail silently.
-			return;
-		}
-
 		if ( is_wp_error( $feed ) && $empty == '' )
 			return false; // Fail silenly.
 		elseif ( is_wp_error( $feed ) )
 			return $empty;
 
-		// Begin: YC, Oct 2012 - show author, show_updated_date, used only in view=rsswidget.
+		// Begin: YC, Oct 2012 - show author, show_date, used only in view=rsswidget.
 		$show_author = ( $show_author != false && $show_author != 'false' ? true: false );
-		$show_date = ( $show_date != false && $show_updated_date != 'false' ? $show_date: false );
+		$show_date = ( $show_date != false && $show_date != 'false' ? true: false );
 
 		// Figure out how many total items there are.
-		$maxitems = $feed->get_item_quantity( );
+		$maxitems = $feed->get_item_quantity();
 
 		// Change the timezone.
-		if ( parse_url( $url, PHP_URL_HOST ) == 'services.calendar.events.ubc.ca' && empty( $time_zone ) ) {
+		if ( empty( $time_zone ) || parse_url( $url, PHP_URL_HOST ) == 'services.calendar.events.ubc.ca' ) {
 			$time_zone = 'America/Vancouver';
 		}
 
@@ -301,22 +282,18 @@ class CTLT_Feed_Shortcode
 				$author = ''; // YC, Oct 2012 - author.
 				$updated_date = ''; // YC, Oct 2012 - updated_date.
 
-					// Begin: YC Oct 2012 - if show_updated_date = true, sort items by last updated date and id instead of published date.
+					// Begin: YC Oct 2012.
 				if ( 'updated' == $show_date ) :
-					function clf_base_date_cmp($a, $b) {
-						$item_a = self::get_feed_item_date( $a, $feed_type );
-						$item_b = self::get_feed_item_date( $b, $feed_type );
-						return strcmp( $item_b[0]['data'], $item_a[0]['data'] );
-					}
 
-					function clf_base_id_cmp($a, $b) {
-						$item_a = $a->get_item_tags( $feed_type === 'RSS' ? '' : 'http://www.w3.org/2005/Atom', 'id' );
-						$item_b = $b->get_item_tags( $feed_type === 'RSS' ? '' : 'http://www.w3.org/2005/Atom', 'id' );
-						return strcmp( $item_b[0]['data'],$item_a[0]['data'] );
-					}
-					usort( $rss_items, 'clf_base_date_cmp' );
-					usort( $rss_items, 'clf_base_id_cmp' );
-				endif;// End: if show_updated_date = true, sort items by last updated date and id instead of published date.
+					usort( $rss_items, function( $a, $b ){
+						return $a->get_date() > $b->get_date();
+					} );
+
+					usort( $rss_items, function( $a, $b ) {
+						return $a->get_id() > $b->get_id();
+					} );
+
+				endif;// End.
 
 				foreach ( (array) $rss_items as $item ) :
 					$odd_or_even = ($count % 2) ? 'odd' : 'even';
@@ -333,8 +310,7 @@ class CTLT_Feed_Shortcode
 
 					// Begin: YC, Oct 2012 - show posts' last updated date instead of published date.
 					if ( $show_date ) :
-						$updated_date = self::get_feed_item_date( $item, $feed_type );
-						$updated_date = $updated_date[0]['data'];
+						$updated_date = $item->get_date();
 						$updated_date = date( $date_format, strtotime( $updated_date ) ); // Adjust to current time-zone.
 					endif; // End: YC Oct 2012 - sort by and show posts' last modify date instead of publish date.
 
