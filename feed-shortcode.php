@@ -215,12 +215,9 @@ class CTLT_Feed_Shortcode
 		$maxitems = $feed->get_item_quantity();
 
 		// Change the timezone.
-		if ( empty( $time_zone ) || parse_url( $url, PHP_URL_HOST ) == 'services.calendar.events.ubc.ca' ) {
-			$time_zone = 'America/Vancouver';
+		if ( empty( $time_zone ) && parse_url( $url, PHP_URL_HOST ) === 'services.calendar.events.ubc.ca' ) {
+			date_default_timezone_set( 'America/Vancouver' );
 		}
-
-		$tz = date_default_timezone_get( );
-		date_default_timezone_set( $time_zone ); // "America/Vancouver".
 
 		if ( $order_by_date < 1 ) {
 			$feed->order_by_date = false;// I think this line makes it so that it DOESN't resort stuff.
@@ -701,6 +698,7 @@ class CTLT_Feed_Shortcode
 				break;
 		}
 
+			$tz = date_default_timezone_get();
 			date_default_timezone_set( $tz );
 			$output_string = ob_get_contents( );
 			ob_end_clean( );
