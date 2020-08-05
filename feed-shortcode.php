@@ -283,11 +283,11 @@ class CTLT_Feed_Shortcode
 				if ( 'updated' == $show_date ) :
 
 					usort( $rss_items, function( $a, $b ){
-						return $a->get_date() > $b->get_date();
+						return $a->get_date() < $b->get_date();
 					} );
 
 					usort( $rss_items, function( $a, $b ) {
-						return $a->get_id() > $b->get_id();
+						return $a->get_id() < $b->get_id();
 					} );
 
 				endif;// End.
