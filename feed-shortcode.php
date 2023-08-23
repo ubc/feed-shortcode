@@ -77,7 +77,7 @@ class CTLT_Feed_Shortcode
 		if ( ! self::has_shortcode( $shortcode ) ) {
 			add_shortcode( $shortcode, array( __CLASS__, $shortcode_function ) );
 		}
-	}	
+	}
 
 	/**
 	 * update_ubc_events_feed function.
@@ -150,7 +150,7 @@ class CTLT_Feed_Shortcode
 		$pos += strlen( $start );
 		$len = strpos( $string,$end,$pos ) - $pos;
 		return substr( $string,$pos,$len );
-	}	
+	}
 
 	/**
 	 * feed_shortcode function.
@@ -249,7 +249,7 @@ class CTLT_Feed_Shortcode
 					$count++;
 				?>
 				<li class="feed_entry <?php echo $odd_or_even; ?>">
-					<a class="feed_title" href="<?php echo esc_url( $item->get_permalink( ) ); ?>" 
+					<a class="feed_title" href="<?php echo esc_url( $item->get_permalink( ) ); ?>"
 						<?php echo $target; ?> ><?php echo esc_html( $item->get_title( ) );?>
 					</a>
 					<?php if ( $excerpt ) : ?>
@@ -264,7 +264,7 @@ class CTLT_Feed_Shortcode
 					</div>
 					<a class="feed_readmore" href="<?php echo esc_url( $item->get_permalink( ) ); ?>" <?php echo $target; ?> ><span class="feed_readmore_text">Read More</span> <span class="feed_arrow_icon">&raquo;</span></a>
 				<?php endif; ?>
-			<?php endforeach; ?> 
+			<?php endforeach; ?>
 		</ul >
 		<?php
 		break;
@@ -331,7 +331,7 @@ class CTLT_Feed_Shortcode
 						<a class="feed_readmore" href="<?php echo esc_url( $item->get_permalink() ); ?>"  <?php echo $target; ?> ><span class="feed_readmore_text">Read More</span> <span class="feed_arrow_icon">&raquo;</span></a>
 					<?php endif; ?>
 				</li>
-			<?php endforeach; ?> 
+			<?php endforeach; ?>
 			</ul>
 			<?php
 			break;
@@ -645,7 +645,7 @@ class CTLT_Feed_Shortcode
 						echo '</tr>';
 						endforeach;
 						?>
-					</table> 
+					</table>
 					<?php if ( $current < 20 && $current > -20 ) { ?>
 					<p>
 						<a href="?current=<?php echo $previous_month; ?>" rel="nofollow" class="button btn"><i class="icon-chevron-left"></i> Previous Month</a>
@@ -866,7 +866,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 */
 	static function add_shortcode( $shortcode, $shortcode_function ){
 
-		if ( ! self::has_shortcode( $shortcode ) )
+		if ( ! self::has_shortcode( $shortcode ) ) /** @phpstan-ignore-line */
 			add_shortcode( $shortcode, array( __CLASS__, $shortcode_function ) );
 
 	}
@@ -951,7 +951,7 @@ class CTLT_Twitter_Feed_Shortcode{
 	 *
 	 * @access public
 	 * @param mixed $type
-	 * @return void
+	 * @return mixed
 	 */
 	static function view( $type ) {
 		if ( empty( self::$twitter_data ) )
@@ -1125,7 +1125,7 @@ break;
 	 * get_counter function.
 	 *
 	 * @access public
-	 * @return void
+	 * @return int
 	 */
 	static function get_counter( ){
 		self::$counter++;
