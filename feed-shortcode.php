@@ -1157,7 +1157,7 @@ break;
 			return '1 day ago.';
 		} else if ( $delta < ( 48 * 60 * 60 * 5 ) ) {
 			return floor( $delta / 86400 ) . ' days ago.';
-		} else if ( time( 'Y' ) == date( 'Y', $time ) ) {
+		} else if ( time() == date( 'Y', $time ) ) {
 			return date( 'j M', $time );
 		} else {
 			return date( 'j M, y', $time );
