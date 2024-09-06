@@ -3,7 +3,7 @@
  * Plugin Name: Feed Shortcode
  * Plugin URI:
  * Description: A [feed] shortcode plugin.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: UBC CMS
  * Author URI: http://ctlt.ubc.ca
  *
