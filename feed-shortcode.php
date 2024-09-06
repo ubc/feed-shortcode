@@ -226,7 +226,7 @@ class CTLT_Feed_Shortcode {
 		$maxitems = $feed->get_item_quantity();
 
 		// Change the timezone.
-		if ( empty( $time_zone ) && parse_url( $url, PHP_URL_HOST ) === 'services.calendar.events.ubc.ca' ) {
+		if ( empty( $time_zone ) && parse_url( $url, PHP_URL_HOST ) === 'events.ubc.ca' ) {
 			date_default_timezone_set( 'America/Vancouver' );
 		}
 
